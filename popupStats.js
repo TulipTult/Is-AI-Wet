@@ -16,18 +16,30 @@ class EnergyStatisticsCalculator {
             resolve(this.conversationHistory);
           } else {
             // Try loading from localStorage directly if content script messaging fails
-            const storedHistory = localStorage.getItem('chatgpt-conversation-history');
-            if (storedHistory) {
-              try {
-                this.conversationHistory = JSON.parse(storedHistory);
-                this.loaded = true;
-                resolve(this.conversationHistory);
-              } catch (e) {
-                console.error('Error parsing stored conversation history:', e);
-                this.conversationHistory = [];
-                resolve([]);
-              }
-            } else {
+            try {
+              // Attempt to access localStorage through content script or background script
+              chrome.tabs.executeScript(tabs[0].id, {
+                code: 'localStorage.getItem("chatgpt-conversation-history");'
+              }, (result) => {
+                if (result && result[0]) {
+                  try {
+                    this.conversationHistory = JSON.parse(result[0]);
+                    this.loaded = true;
+                    resolve(this.conversationHistory);
+                  } catch (e) {
+                    console.error('Error parsing stored conversation history:', e);
+                    this.conversationHistory = [];
+                    resolve([]);
+                  }
+                } else {
+                  // If we can't access localStorage or there's nothing stored
+                  this.conversationHistory = [];
+                  resolve([]);
+                }
+              });
+            } catch (e) {
+              console.error('Error accessing localStorage:', e);
+              this.conversationHistory = [];
               resolve([]);
             }
           }
@@ -109,29 +121,29 @@ class EnergyStatisticsCalculator {
     
     let comparisons = [];
     
-    // Energy comparisons
+    // Energy comparisons - modernized language
     if (energyWh < 1) {
-      comparisons.push(`Your energy usage (${energyWh.toFixed(3)} Wh) is less than charging a smartphone.`);
+      comparisons.push(`Your energy usage (${energyWh.toFixed(3)} Wh) is less than what your smartphone uses during a quick charge.`);
     } else if (energyWh < 5) {
-      comparisons.push(`Your energy usage (${energyWh.toFixed(2)} Wh) is roughly equivalent to the energy needed to pump ${(energyWh * 15).toFixed(1)} liters of water from a well.`);
+      comparisons.push(`Your energy footprint (${energyWh.toFixed(2)} Wh) could pump approximately ${(energyWh * 15).toFixed(1)} liters of fresh water from a well.`);
     } else if (energyWh < 15) {
-      comparisons.push(`Your energy usage (${energyWh.toFixed(2)} Wh) is equivalent to powering an LED bulb for about ${(energyWh / 10).toFixed(1)} hours.`);
+      comparisons.push(`Your energy consumption (${energyWh.toFixed(2)} Wh) equals running a modern LED bulb for about ${(energyWh / 10).toFixed(1)} hours.`);
     } else if (energyWh < 100) {
-      comparisons.push(`Your energy usage (${energyWh.toFixed(1)} Wh) could run a laptop for about ${(energyWh / 50).toFixed(1)} hours.`);
+      comparisons.push(`Your energy impact (${energyWh.toFixed(1)} Wh) is equivalent to powering a laptop for approximately ${(energyWh / 50).toFixed(1)} hours.`);
     } else {
-      comparisons.push(`Your energy usage (${totalEnergyKwh.toFixed(3)} kWh) is approximately ${(totalEnergyKwh / 0.05).toFixed(1)}% of what an average US household uses daily.`);
+      comparisons.push(`Your energy consumption (${totalEnergyKwh.toFixed(3)} kWh) represents roughly ${(totalEnergyKwh / 0.05).toFixed(1)}% of an average US household's daily usage.`);
     }
     
-    // Water comparisons
+    // Water comparisons - modernized language
     if (totalWaterMl < 50) {
-      comparisons.push(`You've used about ${totalWaterMl.toFixed(1)} ml of water, less than a small shot glass.`);
+      comparisons.push(`You've used about ${totalWaterMl.toFixed(1)} ml of water — less than a single espresso shot.`);
     } else if (totalWaterMl < 250) {
-      comparisons.push(`You've used about ${totalWaterMl.toFixed(1)} ml of water, equivalent to a cup of coffee.`);
+      comparisons.push(`Your water footprint is approximately ${totalWaterMl.toFixed(1)} ml — similar to a standard cup of coffee.`);
     } else if (totalWaterMl < 1000) {
-      comparisons.push(`You've used about ${totalWaterMl.toFixed(1)} ml of water, similar to a small bottle of water.`);
+      comparisons.push(`Your water usage totals about ${totalWaterMl.toFixed(1)} ml — equivalent to a regular bottle of water.`);
     } else {
       const liters = totalWaterMl / 1000;
-      comparisons.push(`You've used about ${liters.toFixed(2)} liters of water, equivalent to ${(liters / 8).toFixed(2)} showers.`);
+      comparisons.push(`Your water consumption is approximately ${liters.toFixed(2)} liters — the same as ${(liters / 8).toFixed(2)} quick showers.`);
     }
     
     return comparisons.join(' ');

@@ -3,25 +3,183 @@
 <head>
   <title>How Wet is AI?</title>
   <style>
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes waterRise {
+      from { height: 0%; }
+      to { height: var(--target-height); }
+    }
+    
     body {
       width: 380px;
       height: 600px;
-      font-family: Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
       margin: 0;
       padding: 15px;
-      background-color: #ffffff;
+      background: linear-gradient(135deg, #ffffff, #f5f9ff);
       color: #0D47A1;
       display: flex;
       flex-direction: column;
       align-items: center;
       overflow-y: auto;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+    
+    /* Loading animation styles */
+    .loading-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #3498DB;
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      opacity: 1;
+      transition: opacity 0.3s ease-out;
+    }
+
+    .loading-container.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loading-animation {
+      position: relative;
+      height: 200px;
+      width: 200px;
+    }
+
+    .drop {
+      position: relative;
+      width: 20px;
+      height: 20px;
+      top: -30px;
+      margin: 0 auto;
+      background: #FFF;
+      -moz-border-radius: 20px;
+      -webkit-border-radius: 20px;
+      border-radius: 20px;
+      -moz-animation-name: drip;
+      -webkit-animation-name: drip;
+      animation-name: drip;
+      -moz-animation-timing-function: cubic-bezier(1,0,.91,.19);
+      -webkit-animation-timing-function: cubic-bezier(1,0,.91,.19);
+      animation-timing-function: cubic-bezier(1,0,.91,.19);
+      -moz-animation-duration: 2s;
+      -webkit-animation-duration: 2s;
+      animation-duration: 2s;
+      -moz-animation-iteration-count: infinite;
+      -webkit-animation-iteration-count: infinite;
+      animation-iteration-count: infinite;
+    }
+
+    .drop:before {
+      content: "";
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 30px solid rgba(255,255,255,1);
+      top: -22px;
+    }
+
+    .wave {
+      position: relative;
+      opacity: 0;
+      top: 0;
+      width: 2px;
+      height: 1px;
+      border: #FFF 7px solid;
+      -moz-border-radius: 300px / 150px;
+      -webkit-border-radius: 300px / 150px;
+      border-radius: 300px / 150px;
+      -moz-animation-name: ripple;
+      -webkit-animation-name: ripple;
+      animation-name: ripple;
+      -moz-animation-delay: 2s;
+      -webkit-animation-delay: 2s;
+      animation-delay: 2s;
+      -moz-animation-duration: 2s;
+      -webkit-animation-duration: 2s;
+      animation-duration: 2s;
+      -moz-animation-iteration-count: infinite;
+      -webkit-animation-iteration-count: infinite;
+      animation-iteration-count: infinite;
+    }
+
+    .wave:after {
+      content: "";
+      position: absolute;
+      opacity: 0;
+      top: -5px;
+      left: -5px;
+      width: 2px;
+      height: 1px;
+      border: #FFF 5px solid;
+      -moz-border-radius: 300px / 150px;
+      -webkit-border-radius: 300px / 150px;
+      border-radius: 300px / 150px;
+      -moz-animation-name: ripple-2;
+      -webkit-animation-name: ripple-2;
+      animation-name: ripple-2;
+      -moz-animation-duration: 2s;
+      -webkit-animation-duration: 2s;
+      animation-duration: 2s;
+      -moz-animation-iteration-count: infinite;
+      -webkit-animation-iteration-count: infinite;
+      animation-iteration-count: infinite;
+    }
+
+    @keyframes ripple {
+        from {
+          opacity: 1;
+        }
+        to {
+          width: 600px;
+          height: 300px;
+          border-width: 1px;
+          top: -100px;
+          opacity: 0;
+        }
+    }
+
+    @keyframes ripple-2 {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0;
+        }
+      100% {
+        width: 200px;
+        height: 100px;
+        border-width: 1px;
+        top: 100px;
+        left: 200px;
+      }
+    }
+
+    @keyframes drip {
+        to {
+          top: 190px;
+        }
     }
     
     h1 {
-      font-size: 22px;
+      font-size: 24px;
       margin-bottom: 20px;
       color: #0D47A1;
       text-align: center;
+      font-weight: 600;
+      letter-spacing: -0.5px;
     }
     
     .tabs {
@@ -33,22 +191,30 @@
     }
     
     .tab {
-      padding: 8px 15px;
+      padding: 10px 18px;
       cursor: pointer;
-      background: #E3F2FD;
+      background: linear-gradient(to bottom, #E3F2FD, #BBDEFB);
       margin-right: 5px;
-      border: 1px solid #2196F3;
+      border: 1px solid rgba(33, 150, 243, 0.5);
       border-bottom: none;
-      border-radius: 4px 4px 0 0;
+      border-radius: 8px 8px 0 0;
       color: #0D47A1;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
     }
     
     .tab.active {
-      background: white;
+      background: linear-gradient(to bottom, white, #F5F9FF);
       border-bottom: 1px solid white;
       margin-bottom: -1px;
-      font-weight: bold;
+      font-weight: 600;
       color: #2196F3;
+      box-shadow: 0 -3px 10px rgba(33, 150, 243, 0.1);
+    }
+    
+    .tab:hover:not(.active) {
+      background: linear-gradient(to bottom, #E3F2FD, #90CAF9);
+      transform: translateY(-2px);
     }
     
     .tab-content {
@@ -62,146 +228,270 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      animation: fadeIn 0.5s ease-in-out;
     }
     
     .stats-container {
       width: 90%;
       margin: 10px auto;
-      padding: 15px;
-      background-color: #E3F2FD;
-      border-radius: 10px;
-      border: 1px solid #BBDEFB;
-      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+      padding: 20px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(237, 247, 255, 0.8));
+      border-radius: 16px;
+      border: 1px solid rgba(33, 150, 243, 0.2);
+      box-shadow: 0 10px 20px rgba(0, 55, 107, 0.06), 
+                  0 2px 6px rgba(33, 150, 243, 0.1);
+      transition: all 0.3s ease;
+      animation: fadeIn 0.6s ease-in-out;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stats-container:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 26px rgba(0, 55, 107, 0.1), 
+                 0 4px 8px rgba(33, 150, 243, 0.15);
+    }
+    
+    .stats-container::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(to right, #2196F3, #64B5F6);
     }
     
     .stat-box {
       display: flex;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
       text-align: left;
+      padding: 5px 0;
+      transition: transform 0.2s ease;
+    }
+    
+    .stat-box:hover {
+      transform: translateX(5px);
     }
     
     .stat-label {
       width: 120px;
-      font-weight: bold;
+      font-weight: 600;
+      color: #0D47A1;
+      font-size: 14px;
+      letter-spacing: 0.3px;
     }
     
     .stat-value {
       flex: 1;
+      font-weight: 500;
+      color: #1565C0;
+      font-size: 15px;
     }
     
     .water-usage-display {
-      margin: 15px 0;
-      font-size: 18px;
-      font-weight: bold;
+      margin: 20px 0;
+      font-size: 20px;
+      font-weight: 600;
       color: #1976D2;
+      padding: 8px 15px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(224, 242, 254, 0.5));
+      box-shadow: 0 2px 10px rgba(33, 150, 243, 0.1);
+      animation: fadeIn 0.8s ease-in-out;
     }
     
     .progress-bar {
       height: 10px;
-      background: #BBDEFB;
+      background: linear-gradient(to right, #D6EAF8, #BBDEFB);
       border-radius: 5px;
       margin-top: 5px;
       overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     }
     
     .progress-fill {
       height: 100%;
-      background: #2196F3;
+      background: linear-gradient(to right, #2196F3, #64B5F6);
       width: 0%;
+      border-radius: 5px;
+      transition: width 1s ease-out;
+      box-shadow: 0 0 5px rgba(33, 150, 243, 0.4);
     }
     
     .prompt-item {
       border: 1px solid #BBDEFB;
-      margin-bottom: 10px;
-      padding: 8px;
-      border-radius: 8px;
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 12px;
       width: 90%;
+      background: linear-gradient(145deg, #ffffff, #f5f9ff);
+      box-shadow: 0 3px 10px rgba(33, 150, 243, 0.07);
+      transition: transform 0.2s ease;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    .prompt-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(33, 150, 243, 0.1);
     }
     
     .timestamp {
-      color: #0D47A1;
+      color: #1565C0;
       font-size: 12px;
       margin-bottom: 5px;
+      font-weight: 500;
     }
     
     .prompt {
       margin-bottom: 5px;
       white-space: pre-wrap;
-      background-color: #E3F2FD;
-      padding: 5px;
-      border-radius: 3px;
+      background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
     }
     
     .environmental-impact {
-      font-size: 12px;
+      font-size: 13px;
       color: #0D47A1;
-      margin-top: 5px;
-      padding-top: 5px;
+      margin-top: 8px;
+      padding-top: 8px;
       border-top: 1px dashed #BBDEFB;
     }
     
     .controls {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
       display: flex;
       justify-content: center;
+      gap: 10px;
     }
     
     button {
       margin: 0 5px;
-      padding: 8px 12px;
-      background-color: #2196F3;
+      padding: 10px 16px;
+      background: linear-gradient(to bottom, #2196F3, #1976D2);
       color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 3px 8px rgba(33, 150, 243, 0.3);
+      font-weight: 500;
+      letter-spacing: 0.3px;
     }
     
     button:hover {
-      background-color: #1976D2;
+      background: linear-gradient(to bottom, #1E88E5, #1565C0);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 12px rgba(21, 101, 192, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 5px rgba(21, 101, 192, 0.4);
     }
     
     .empty-state {
       color: #0D47A1;
       font-style: italic;
+      opacity: 0.8;
+      padding: 20px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(224, 242, 254, 0.5), rgba(187, 222, 251, 0.3));
+      animation: fadeIn 0.7s ease-in-out;
     }
     
     .eco-comparison {
-      margin: 10px 0;
-      padding: 15px;
-      background-color: #E3F2FD;
-      border-radius: 8px;
-      border-left: 3px solid #2196F3;
+      margin: 20px 0;
+      padding: 22px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(237, 247, 255, 0.8));
+      border-radius: 16px;
+      border: none;
       width: 90%;
       text-align: left;
+      box-shadow: 0 10px 20px rgba(0, 55, 107, 0.06), 
+                  0 2px 6px rgba(33, 150, 243, 0.1);
+      transition: all 0.3s ease;
+      animation: fadeIn 0.7s ease-in-out;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .eco-comparison:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 26px rgba(0, 55, 107, 0.1), 
+                 0 4px 8px rgba(33, 150, 243, 0.15);
+    }
+    
+    .eco-comparison::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 6px;
+      height: 100%;
+      background: linear-gradient(to bottom, #2196F3, #81D4FA);
+      border-radius: 3px 0 0 3px;
     }
     
     .eco-comparison h3 {
       margin-top: 0;
-      color: #2196F3;
-      text-align: center;
+      margin-bottom: 16px;
+      color: #1976D2;
+      font-weight: 600;
+      font-size: 17px;
+      letter-spacing: 0.3px;
+      padding-left: 6px;
+      position: relative;
+    }
+    
+    .eco-comparison p {
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: #0D47A1;
+      margin-bottom: 0;
     }
     
     .period-selector {
       margin: 15px 0;
+      animation: fadeIn 0.5s ease-in-out;
     }
     
     select {
-      padding: 8px;
+      padding: 10px 15px;
       border: 1px solid #BBDEFB;
-      border-radius: 5px;
-      background-color: white;
+      border-radius: 8px;
+      background: linear-gradient(to bottom, white, #f5f9ff);
       color: #0D47A1;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%230D47A1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 12px;
+      padding-right: 30px;
     }
     
-    /* Water cup visualization styles - unchanged */
+    select:hover {
+      border-color: #90CAF9;
+      box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+      transform: translateY(-2px);
+    }
+    
+    /* Water cup visualization styles - with animation */
     .cup-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       margin: 15px 0;
       transform: rotate(180deg); /* Flip the entire cup */
+      animation: fadeIn 0.7s ease-in-out;
     }
     
     .cup-label {
@@ -213,14 +503,14 @@
     
     .cup {
       position: relative;
-      width: 60px;
-      height: 100px;
-      background: linear-gradient(to top, #ffffffcc, #e0e0e0);
+      width: 65px;
+      height: 110px;
+      background: linear-gradient(to right, rgba(255,255,255,0.9), rgba(228, 244, 255, 0.8));
       border: 3px solid #BBDEFB;
-      border-radius: 10px 10px 30px 30px;
+      border-radius: 12px 12px 35px 35px;
       overflow: hidden;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      transform: rotate(180deg); /* Flip the entire cup */
+      box-shadow: 0 6px 15px rgba(33,150,243,0.15);
+      transform: rotate(180deg); /* Flip the cup */
     }
     
     .cup-rim {
@@ -229,7 +519,7 @@
       left: 0;
       width: 100%;
       height: 8px;
-      background: #BBDEFB;
+      background: linear-gradient(to right, #BBDEFB, #90CAF9);
       border-radius: 50%;
       box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
       z-index: 2;
@@ -241,15 +531,60 @@
       bottom: 0;
       width: 100%;
       height: 0%;
-      background: linear-gradient(to top, #2196F3, #64B5F6);
+      background: linear-gradient(to top, #1976D2, #64B5F6);
       border-bottom-left-radius: 5px;
       border-bottom-right-radius: 5px;
-      transition: height 1.5s ease-in-out;
+      transition: height 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       transform: rotate(180deg); /* flip water back upright */
+      box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);
+    }
+    
+    h2 {
+      font-size: 18px;
+      margin: 0 0 18px 0;
+      color: #1565C0;
+      font-weight: 600;
+      position: relative;
+      padding-bottom: 10px;
+      text-align: left;
+    }
+    
+    h2::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 40px;
+      height: 3px;
+      background: linear-gradient(to right, #2196F3, rgba(100, 181, 246, 0.5));
+      border-radius: 2px;
+    }
+    
+    /* Add subtle shine effect to water */
+    .water::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 40%;
+      background: linear-gradient(to bottom, 
+                  rgba(255, 255, 255, 0.3), 
+                  rgba(255, 255, 255, 0.1));
+      border-radius: 100%;
+      transform: scale(1.5);
     }
   </style>
 </head>
 <body>
+  <!-- Loading animation container -->
+  <div class="loading-container" id="loading-screen">
+    <div class="loading-animation">
+      <div class="drop"></div>
+      <div class="wave"></div>
+    </div>
+  </div>
+
   <h1>How Wet is AI?</h1>
   
   <!-- Cup visualization now directly below title -->

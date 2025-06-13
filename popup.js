@@ -2,11 +2,26 @@
 
 // Initialize the UI
 document.addEventListener('DOMContentLoaded', async () => {
+  // Show loading animation first
+  const loadingScreen = document.getElementById('loading-screen');
+  
+  // Hide loading screen after 1.5 seconds
+  setTimeout(() => {
+    loadingScreen.classList.add('hidden');
+    setTimeout(() => {
+      loadingScreen.style.display = 'none';
+      initializeApp(); // Initialize the app after loading animation
+    }, 300); // Additional time for fade out animation
+  }, 1500);
+});
+
+// App initialization moved to separate function
+function initializeApp() {
   // Setup tab navigation
   setupTabs();
   
   // Load conversation history and calculate initial statistics
-  await loadStats();
+  loadStats();
   
   // Setup event listeners
   setupEventListeners();
@@ -17,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (queryParams.get('source') === 'contentScript') {
     triggerHistoryOverlay();
   }
-});
+}
 
 // Setup tab navigation
 function setupTabs() {

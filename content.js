@@ -263,7 +263,19 @@ function addViewerButton() {
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     `;
     
-    button.addEventListener('click', toggleHistoryOverlay);
+    button.addEventListener('click', function() {
+        // Create popup URL with source parameter
+        const popupUrl = chrome.runtime.getURL('popup.html') + '?source=contentScript';
+        
+        // Open the popup in a small window
+        window.open(
+            popupUrl,
+            'HowWetIsAI', 
+            'width=420,height=650,status=no,scrollbars=yes,resizable=no'
+        );
+        
+        // Don't toggle the overlay here, the popup will handle that
+    });
     document.body.appendChild(button);
 }
 
