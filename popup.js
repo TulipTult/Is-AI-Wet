@@ -113,13 +113,37 @@ function updateStatsDisplay(period) {
   tokenCountEl.textContent = stats.totalTokens.toLocaleString();
   
   // Update water cup fill level
-  // Calculate fill percentage based on water usage (ml * 0.1)
+  // Calculate fill percentage based on water usage with period-specific multipliers
+  let fillMultiplier;
+  switch(period) {
+    case 'today':
+      fillMultiplier = 0.8;
+      break;
+    case 'week':
+      fillMultiplier = 0.1;
+      break;
+    case 'month':
+      fillMultiplier = 0.025;
+      break;
+    case 'all':
+    default:
+      fillMultiplier = 0.005;
+      break;
+  }
   // Cap at 100% to avoid overflow
-  const fillLevel = Math.min(stats.totalWaterMl * 0.1, 100);
+  const fillLevel = Math.min(stats.totalWaterMl * fillMultiplier, 100);
   waterCupEl.style.height = fillLevel + '%';
   
   // Generate and display eco-comparison
   ecoComparisonEl.textContent = window.energyStats.generateEcoComparisons(stats);
+  
+  // Check if data reporting is enabled and submit stats
+  chrome.storage.local.get('dataReportingEnabled', (result) => {
+    if (result.dataReportingEnabled === true && period === 'all') {
+      // Only submit data for "all time" view to avoid duplicate submissions
+      window.energyStats.submitWaterUsage(stats.totalWaterMl);
+    }
+  });
 }
 
 // Update the prompts list
@@ -196,6 +220,25 @@ function setupEventListeners() {
   
   // Clear history button
   document.getElementById('clear-history').addEventListener('click', clearHistory);
+  
+  // Data sharing toggle
+  const dataSharingToggle = document.getElementById('data-sharing-toggle');
+  if (dataSharingToggle) {
+    // Initialize toggle state from storage
+    chrome.storage.local.get('dataReportingEnabled', (result) => {
+      dataSharingToggle.checked = result.dataReportingEnabled === true;
+    });
+    
+    // Add event listener for toggle
+    dataSharingToggle.addEventListener('change', function() {
+      window.energyStats.toggleDataReporting(this.checked);
+      
+      // If enabled, submit accumulated data
+      if (this.checked) {
+        window.energyStats.submitAccumulatedData();
+      }
+    });
+  }
 }
 
 // Export history as JSON

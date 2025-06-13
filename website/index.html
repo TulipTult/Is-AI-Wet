@@ -402,6 +402,89 @@
             opacity: 0.8;
         }
 
+        .global-tracker {
+            background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(237, 247, 255, 0.8));
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 20px rgba(0, 55, 107, 0.06), 0 2px 6px rgba(33, 150, 243, 0.1);
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .water-tracker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .water-counter {
+            margin-bottom: 30px;
+        }
+        
+        .counter-number {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #1976D2;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        
+        .counter-label {
+            font-size: 1.2rem;
+            color: #0D47A1;
+            font-weight: 500;
+        }
+        
+        .water-visual {
+            margin-top: 20px;
+        }
+        
+        .pool-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .pool {
+            width: 200px;
+            height: 80px;
+            background: linear-gradient(to top, #64B5F6, #2196F3);
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .pool::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: scale(1.5);
+        }
+        
+        .pool-label {
+            font-size: 1.1rem;
+            color: #1565C0;
+            font-weight: 500;
+        }
+        
+        .tracker-info {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 25px;
+        }
+        
+        .tracker-cta {
+            margin-top: 20px;
+        }
+        
         @media (max-width: 768px) {
             header {
                 padding: 60px 0 40px;
@@ -425,6 +508,23 @@
 
             .step {
                 padding: 25px 25px 25px 70px;
+            }
+
+            .global-tracker {
+                padding: 25px;
+            }
+            
+            .counter-number {
+                font-size: 3rem;
+            }
+            
+            .counter-label {
+                font-size: 1rem;
+            }
+            
+            .pool {
+                width: 150px;
+                height: 60px;
             }
         }
     </style>
@@ -526,6 +626,91 @@
             AI models like ChatGPT require significant computational resources, which translate to real-world energy consumption and water usage for cooling. Being aware of this environmental impact is the first step toward more sustainable AI use.
         </p>
     </section>
+
+    <section style="background: linear-gradient(135deg, #f5f9ff, #E3F2FD);">
+        <div class="container">
+            <h2 class="section-title">Global Impact Tracker</h2>
+            
+            <div class="global-tracker">
+                <div class="water-tracker">
+                    <div class="water-counter">
+                        <div class="counter-number" id="total-water-counter">0</div>
+                        <div class="counter-label">liters of water tracked</div>
+                    </div>
+                    <div class="water-visual">
+                        <div class="pool-container">
+                            <div class="pool"></div>
+                            <div class="pool-label">
+                                That's <span id="pool-count">0</span> backyard swimming pools
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tracker-info">
+                    Water tracked using the How Wet is AI? extension by <span id="contributor-count">0</span> contributors. 
+                    <br>Last updated: <span id="last-updated">-</span>
+                </div>
+                
+                <div class="tracker-cta">
+                    <a href="https://github.com/TulipTult/Is-AI-Wet" class="cta-button">Join the Tracking Effort</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Fetch water usage data from our backend
+                const response = await fetch('http://localhost:3000/api/water-usage');
+                const data = await response.json();
+                
+                // Calculate values
+                const waterLiters = (data.totalWaterML / 1000 / 2).toFixed(2);
+                
+                // Average backyard pool is about 20,000 liters (5,000 gallons)
+                const poolSize = 20000;  
+                const poolCount = Math.max(0.01, (data.totalWaterML / 1000 / poolSize).toFixed(2));
+                
+                // Update the display
+                document.getElementById('total-water-counter').textContent = waterLiters;
+                document.getElementById('pool-count').textContent = poolCount;
+                document.getElementById('contributor-count').textContent = data.contributorCount.toLocaleString();
+                
+                // Format the date
+                const lastUpdated = new Date(data.lastUpdated);
+                document.getElementById('last-updated').textContent = lastUpdated.toLocaleString();
+                
+                // Animate the counter (optional effect)
+                animateCounter('total-water-counter', 0, waterLiters, 2000);
+            } catch (error) {
+                console.error('Error fetching water usage data:', error);
+                document.getElementById('total-water-counter').textContent = 'Unable to load';
+            }
+        });
+        
+        // Animation function for the counter
+        function animateCounter(elementId, start, end, duration) {
+            const element = document.getElementById(elementId);
+            const startTime = performance.now();
+            const endValue = parseFloat(end);
+            
+            function updateCounter(timestamp) {
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const currentValue = progress * (endValue - start) + start;
+                
+                element.textContent = currentValue.toFixed(2);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                }
+            }
+            
+            requestAnimationFrame(updateCounter);
+        }
+    </script>
 
     <footer>
         <div class="container">

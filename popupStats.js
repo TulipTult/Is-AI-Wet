@@ -4,6 +4,14 @@ class EnergyStatisticsCalculator {
   constructor() {
     this.conversationHistory = [];
     this.loaded = false;
+    this.dataReportingEnabled = false;
+    this.lastSubmittedWaterUsage = 0;
+    
+    // Check if data reporting is enabled and get last submitted value
+    chrome.storage.local.get(['dataReportingEnabled', 'lastSubmittedWaterUsage'], (result) => {
+      this.dataReportingEnabled = result.dataReportingEnabled === true;
+      this.lastSubmittedWaterUsage = result.lastSubmittedWaterUsage || 0;
+    });
   }
   
   async loadConversationHistory() {
@@ -157,6 +165,83 @@ class EnergyStatisticsCalculator {
     }
     
     return comparisons.join(' ');
+  }
+  
+  // New method to submit water usage to the backend
+  async submitWaterUsage(waterUsageML) {
+    if (!this.dataReportingEnabled) return false;
+    
+    try {
+      // Retrieve the stored last submitted amount
+      const storageData = await new Promise(resolve => {
+        chrome.storage.local.get('lastSubmittedWaterUsage', resolve);
+      });
+      const previouslySubmitted = storageData.lastSubmittedWaterUsage || 0;
+      
+      // Only submit if there's new data to report
+      if (waterUsageML <= previouslySubmitted) {
+        console.log('No new water usage to submit');
+        return true; // No error, just nothing to submit
+      }
+      
+      const userId = this.generateAnonymousId();
+      const response = await fetch('http://localhost:3000/api/submit-usage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          waterUsageML,
+          previouslySubmitted,
+          userId
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        // Store the new submitted amount
+        this.lastSubmittedWaterUsage = waterUsageML;
+        chrome.storage.local.set({ lastSubmittedWaterUsage: waterUsageML });
+        console.log(`Successfully submitted water usage: ${waterUsageML - previouslySubmitted}ml (new delta)`);
+      }
+      return data.success;
+    } catch (error) {
+      console.error('Error submitting water usage data:', error);
+      return false;
+    }
+  }
+  
+  // Generate a pseudonymous ID for reporting
+  generateAnonymousId() {
+    // Check if we already have an ID stored
+    const storedId = localStorage.getItem('hwiai-anonymous-id');
+    if (storedId) return storedId;
+    
+    // Generate a new ID (simple uuid-like string)
+    const newId = 'user-' + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('hwiai-anonymous-id', newId);
+    return newId;
+  }
+  
+  // Toggle data reporting setting
+  toggleDataReporting(enabled) {
+    this.dataReportingEnabled = enabled;
+    chrome.storage.local.set({dataReportingEnabled: enabled});
+    
+    // If newly enabled, submit accumulated data
+    if (enabled) {
+      this.submitAccumulatedData();
+    }
+  }
+  
+  // Submit accumulated data if opted-in
+  async submitAccumulatedData() {
+    if (!this.dataReportingEnabled) return;
+    
+    const stats = this.getStatsByPeriod('all');
+    if (stats && stats.totalWaterMl > 0) {
+      await this.submitWaterUsage(stats.totalWaterMl);
+    }
   }
 }
 
