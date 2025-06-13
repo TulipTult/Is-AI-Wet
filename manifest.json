@@ -13,5 +13,9 @@
     "default_popup": "popup.html",
     "default_title": "View Recorded Prompts"
   },
-  "permissions": ["storage"]
+  "permissions": ["storage", "scripting"],
+  "host_permissions": [
+    "https://chat.openai.com/*",
+    "https://chatgpt.com/*"
+  ]
 }

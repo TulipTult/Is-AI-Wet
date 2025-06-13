@@ -17,26 +17,36 @@ class EnergyStatisticsCalculator {
           } else {
             // Try loading from localStorage directly if content script messaging fails
             try {
-              // Attempt to access localStorage through content script or background script
-              chrome.tabs.executeScript(tabs[0].id, {
-                code: 'localStorage.getItem("chatgpt-conversation-history");'
-              }, (result) => {
-                if (result && result[0]) {
-                  try {
-                    this.conversationHistory = JSON.parse(result[0]);
-                    this.loaded = true;
-                    resolve(this.conversationHistory);
-                  } catch (e) {
-                    console.error('Error parsing stored conversation history:', e);
+              // Use chrome.scripting.executeScript instead of deprecated chrome.tabs.executeScript
+              if (chrome.scripting && chrome.scripting.executeScript) {
+                chrome.scripting.executeScript({
+                  target: { tabId: tabs[0].id },
+                  function: () => localStorage.getItem("chatgpt-conversation-history")
+                }).then(result => {
+                  if (result && result[0] && result[0].result) {
+                    try {
+                      this.conversationHistory = JSON.parse(result[0].result);
+                      this.loaded = true;
+                      resolve(this.conversationHistory);
+                    } catch (e) {
+                      console.error('Error parsing stored conversation history:', e);
+                      this.conversationHistory = [];
+                      resolve([]);
+                    }
+                  } else {
                     this.conversationHistory = [];
                     resolve([]);
                   }
-                } else {
-                  // If we can't access localStorage or there's nothing stored
+                }).catch(err => {
+                  console.error('Error executing script:', err);
                   this.conversationHistory = [];
                   resolve([]);
-                }
-              });
+                });
+              } else {
+                console.error('chrome.scripting.executeScript not available. Check extension permissions.');
+                this.conversationHistory = [];
+                resolve([]);
+              }
             } catch (e) {
               console.error('Error accessing localStorage:', e);
               this.conversationHistory = [];
