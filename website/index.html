@@ -5,22 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>How Wet is AI? - Water & Energy Impact Tracker</title>
     <style>
+        /* 
+         * Animation Keyframes
+         * These define smooth transitions for water-related visual effects
+         * Using CSS animations improves performance compared to JavaScript animations
+         */
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
 
+        /* Water dripping animation - simulates droplets falling from top */
         @keyframes waterDrip {
             from { transform: translateY(-20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
 
+        /* Gentle floating animation - creates a buoyant water effect */
         @keyframes float {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
         }
 
+        /* Ripple effect - expands circles outward like water ripples */
         @keyframes ripple {
             0% { 
                 transform: scale(0.8);
@@ -32,12 +40,15 @@
             }
         }
 
+        /* Background color shift - simulates moving water reflections */
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
 
+        /* Base styles for consistent layout and typography */
+        /* Using system fonts improves loading performance by avoiding web font downloads */
         * {
             margin: 0;
             padding: 0;
@@ -530,6 +541,13 @@
     </style>
 </head>
 <body>
+    <!-- 
+        Header Section with Water Animation
+        Features animated water drops and gradient background
+        INPUT: None
+        OUTPUT: Visual presentation of site title and CTA button
+        EXAMPLE: When a user loads the page, they see water drops animating downward and a title fading in
+    -->
     <header>
         <div class="header-graphics">
             <div class="water-drop"></div>
@@ -546,6 +564,12 @@
         </div>
     </header>
 
+    <!-- 
+        About Section
+        Explains the extension's purpose with visual water demonstration
+        Efficiency: Uses flex layout for responsive card alignment without media queries
+        Future modifications: New feature cards can be added without restructuring
+    -->
     <section class="container">
         <h2 class="section-title">About The Extension</h2>
         <p style="text-align: center; max-width: 800px; margin: 0 auto 40px;">
@@ -577,6 +601,12 @@
         </div>
     </section>
 
+    <!-- 
+        Installation Guide Section
+        Step-by-step instructions with numbered items for easy following
+        Uses semantic HTML structure with ordered visual design
+        Each step has clear visual distinction for improved user experience
+    -->
     <section style="background: linear-gradient(135deg, #f5f9ff, #E3F2FD);">
         <div class="container">
             <h2 class="section-title">How to Install</h2>
@@ -620,6 +650,12 @@
         </div>
     </section>
 
+    <!-- 
+        Why It Matters Section
+        Brief explanation of environmental impact significance
+        Keeps content concise for better user engagement
+        Uses consistent styling with other sections for visual coherence
+    -->
     <section class="container">
         <h2 class="section-title">Why It Matters</h2>
         <p style="text-align: center; max-width: 800px; margin: 0 auto 40px;">
@@ -627,6 +663,13 @@
         </p>
     </section>
 
+    <!-- 
+        Global Impact Tracker Section
+        Dynamic component that displays aggregated water usage data
+        INPUT: API data from backend showing total water usage
+        OUTPUT: Visualizations and metrics of global impact
+        Connected to backend API via JavaScript
+    -->
     <section style="background: linear-gradient(135deg, #f5f9ff, #E3F2FD);">
         <div class="container">
             <h2 class="section-title">Global Impact Tracker</h2>
@@ -659,6 +702,16 @@
         </div>
     </section>
 
+    <!-- 
+        JavaScript for Global Impact Tracker
+        Fetches and displays water usage data from the backend API
+        INPUT: Data from API endpoint - total water usage, contributor count, last update time
+        OUTPUT: Animated counter and visual water representation
+        EXAMPLE: When data shows 1000L of water usage, counter animates from 0 to 1000
+        
+        Efficiency: Uses requestAnimationFrame for smooth animations
+        Error handling includes fallback display when API is unavailable
+    -->
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
             try {
@@ -691,6 +744,10 @@
         });
         
         // Animation function for the counter
+        // INPUT: Element ID, start value, end value, and duration in milliseconds
+        // OUTPUT: Animated counting effect from start to end value
+        // EXAMPLE: animateCounter('my-counter', 0, 100, 1000) - animates from 0 to 100 over 1 second
+        // Uses requestAnimationFrame for performance and smooth animation
         function animateCounter(elementId, start, end, duration) {
             const element = document.getElementById(elementId);
             const startTime = performance.now();
@@ -712,6 +769,12 @@
         }
     </script>
 
+    <!-- 
+        Footer Section
+        Contains final CTA and repository link
+        Maintains consistent styling with the header for visual coherence
+        Uses semantic footer element for proper document structure
+    -->
     <footer>
         <div class="container">
             <p>How Wet is AI? - Water & Energy Impact Tracker</p>

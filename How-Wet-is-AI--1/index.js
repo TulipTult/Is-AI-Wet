@@ -1,16 +1,45 @@
+/**
+ * GPT-4 Energy and Water Usage Calculator
+ * 
+ * This application estimates the energy consumption and water usage
+ * of GPT-4 inference based on prompt characteristics. It analyzes 
+ * the complexity, reasoning level, and openness of prompts to provide 
+ * accurate usage metrics for both direct inference and real-world usage.
+ * 
+ * @module howWetIsAI
+ * @author Anonymous
+ * @version 1.0.0
+ */
+
 import { encoding_for_model } from "@dqbd/tiktoken";
 import textReadability from "text-readability";
 import nlp from "compromise";
 import readline from "readline";
 import { estimateResponseTokens } from "./tokenEstimator.js";
 
-// Add global counters to track cumulative usage
+/**
+ * Global counters to track cumulative resource usage across sessions
+ * These counters provide aggregate statistics for benchmarking and awareness
+ */
 let totalPrompts = 0;
 let totalTokens = 0;
 let totalRealWorldKWh = 0;
 let totalRealWorldWaterUsageMl = 0;
 
-// Token counting using tiktoken
+/**
+ * Counts the tokens in a prompt and estimates response tokens
+ * 
+ * Uses tiktoken for accurate tokenization matching GPT-4's tokenizer
+ * and our custom estimator for predicting response length
+ * 
+ * @param {string} prompt - The user's input text
+ * @returns {Promise<Object>} Object containing prompt tokens, estimated response tokens, and total tokens
+ * 
+ * @example
+ * // Count tokens for a simple question
+ * const result = await countTokens("What is the capital of France?");
+ * // Returns {promptTokens: 7, estimatedResponseTokens: 20, totalTokens: 27}
+ */
 async function countTokens(prompt) {
   const encoder = await encoding_for_model("gpt-4");
   const tokens = encoder.encode(prompt);
@@ -27,18 +56,56 @@ async function countTokens(prompt) {
   };
 }
 
-// Vocabulary complexity calculation
+/**
+ * Calculates vocabulary complexity score for a prompt
+ * 
+ * Uses Flesch-Kincaid Grade Level scoring to determine how complex
+ * the vocabulary and sentence structure is, normalized to 0-1 scale
+ * 
+ * @param {string} prompt - The text to analyze
+ * @returns {number} Complexity score between 0-1 (0 = simple, 1 = complex)
+ * 
+ * @example
+ * // Calculate complexity of simple text
+ * const simpleScore = getVocabComplexity("The cat sat on the mat.");
+ * // Returns ~0.2 (simple vocabulary)
+ * 
+ * @example
+ * // Calculate complexity of complex text
+ * const complexScore = getVocabComplexity("The quantum mechanical model elucidates the probabilistic nature of atomic orbitals.");
+ * // Returns ~0.8 (complex vocabulary)
+ */
 function getVocabComplexity(prompt) {
   const score = textReadability.fleschKincaidGrade(prompt);
   return Math.min(score / 12, 1); // Normalize to 0–1 (12th grade = complex)
 }
 
-// Reasoning type detection - with extensive indicators
+/**
+ * Determines the reasoning level required for a prompt
+ * 
+ * Analyzes text for indicators of complex reasoning requirements
+ * using comprehensive linguistic pattern matching
+ * 
+ * @param {string} prompt - The text to analyze
+ * @returns {number} Reasoning level (1 = simple, 2 = moderate, 3 = complex)
+ * 
+ * @example
+ * // Check reasoning level for a simple query
+ * const simpleLevel = getReasoningLevel("What time is it in Tokyo?");
+ * // Returns 1 (simple reasoning)
+ * 
+ * @example
+ * // Check reasoning level for a complex query
+ * const complexLevel = getReasoningLevel("Analyze the ethical implications of artificial general intelligence on society.");
+ * // Returns 3 (complex reasoning)
+ */
 function getReasoningLevel(prompt) {
   const lower = prompt.toLowerCase();
   const doc = nlp(lower);
   
   // Complex reasoning indicators (Level 3) - at least 300 indicators
+  // These indicate prompts requiring sophisticated analysis, synthesis, ethical reasoning,
+  // or handling of ambiguity and nuanced topics
   const complexReasoningIndicators = [
     // Philosophical & ethical
     "ethics", "impact", "philosophy", "moral", "ethical", "values", "justice", "rights", "duty",
@@ -116,6 +183,7 @@ function getReasoningLevel(prompt) {
   ];
   
   // Moderate reasoning indicators (Level 2) - at least 300 indicators
+  // These suggest prompts requiring explanation, instruction, comparison, or implementation
   const moderateReasoningIndicators = [
     // How questions & instructions
     "how to", "how do", "how does", "how can", "how would", "how should", "how might", "how is",
@@ -203,6 +271,8 @@ function getReasoningLevel(prompt) {
   // Simple reasoning indicators are the default (Level 1) when no other indicators match
   
   // Check for complex reasoning indicators first
+  // If any complex indicator is found, we classify as level 3
+  // Example: "Analyze the ethical implications of AGI" → Level 3
   for (const indicator of complexReasoningIndicators) {
     if (lower.includes(indicator)) {
       return 3; // Complex reasoning
@@ -210,6 +280,8 @@ function getReasoningLevel(prompt) {
   }
   
   // Then check for moderate reasoning indicators
+  // If any moderate indicator is found, we classify as level 2
+  // Example: "How to build a basic website" → Level 2
   for (const indicator of moderateReasoningIndicators) {
     if (lower.includes(indicator)) {
       return 2; // Moderate reasoning
@@ -217,14 +289,34 @@ function getReasoningLevel(prompt) {
   }
   
   // Default to simple reasoning
+  // Example: "What's the capital of France?" → Level 1
   return 1; // Simple reasoning
 }
 
-// Prompt openness score - with extensive indicators
+/**
+ * Calculates how open-ended a prompt is
+ * 
+ * Analyzes text for indicators of creative, hypothetical, or
+ * exploratory requests versus factual or closed-ended queries
+ * 
+ * @param {string} prompt - The text to analyze
+ * @returns {number} Openness score (0 = closed/factual, 1 = medium, 2 = highly open/creative)
+ * 
+ * @example
+ * // Check openness for a factual query
+ * const factualScore = getOpennessScore("What is the population of Tokyo?");
+ * // Returns 0 (closed/factual)
+ * 
+ * @example
+ * // Check openness for a creative request
+ * const creativeScore = getOpennessScore("Write a story about a time-traveling detective.");
+ * // Returns 2 (highly open/creative)
+ */
 function getOpennessScore(prompt) {
   const lower = prompt.toLowerCase();
   
   // High openness indicators (Score 2) - at least 300 indicators
+  // These indicate creative, generative, or highly exploratory requests
   const highOpenPhrases = [
     // Creative writing & storytelling
     "imagine", "write a story", "creative writing", "short story", "novel", "fiction", "narrative",
@@ -314,6 +406,7 @@ function getOpennessScore(prompt) {
   ];
   
   // Medium openness indicators (Score 1) - at least 300 indicators
+  // These indicate explanatory, descriptive, or semi-structured requests
   const mediumOpenPhrases = [
     // Explanatory requests
     "explain", "clarify", "elucidate", "illustrate", "demonstrate", "show", "tell", "inform",
@@ -389,6 +482,8 @@ function getOpennessScore(prompt) {
   ];
   
   // Check for high openness indicators first
+  // High openness involves generation of new content or creative exploration
+  // Example: "Write a sci-fi story about Mars colonization" → 2
   for (const phrase of highOpenPhrases) {
     if (lower.includes(phrase)) {
       return 2; // High openness
@@ -396,6 +491,8 @@ function getOpennessScore(prompt) {
   }
   
   // Then check for medium openness indicators
+  // Medium openness involves explanation or description without strict factuality
+  // Example: "Explain how photosynthesis works" → 1
   for (const phrase of mediumOpenPhrases) {
     if (lower.includes(phrase)) {
       return 1; // Medium openness
@@ -403,10 +500,32 @@ function getOpennessScore(prompt) {
   }
   
   // Default to low openness
+  // Low openness involves factual or closed-ended queries
+  // Example: "What's the boiling point of water?" → 0
   return 0; // Low openness
 }
 
-// Calculate energy usage in kWh
+/**
+ * Calculates estimated energy and water usage for processing a prompt
+ * 
+ * Combines token count, complexity, reasoning level, and openness to estimate
+ * both theoretical direct energy usage and real-world usage with overhead factors
+ * 
+ * @param {string} prompt - The text to analyze
+ * @returns {Promise<Object>} Detailed energy and water usage metrics
+ * 
+ * @example
+ * // Calculate energy for a simple query
+ * const simpleEnergy = await calculateEnergy("What's the weather today?");
+ * // Returns object with direct and real-world energy/water estimates
+ * // e.g., {directKWh: 0.0000062, realWorldKWh: 0.000078, ...}
+ * 
+ * @example
+ * // Calculate energy for a complex creative request
+ * const complexEnergy = await calculateEnergy("Write a 2000 word story about space exploration");
+ * // Returns higher energy usage values
+ * // e.g., {directKWh: 0.000152, realWorldKWh: 0.00192, ...}
+ */
 async function calculateEnergy(prompt) {
   // BASE_KWH_PER_1000_TOKENS from user feedback
   const BASE_KWH_PER_1000_TOKENS = 0.002;
@@ -416,6 +535,8 @@ async function calculateEnergy(prompt) {
   const WATER_USAGE_ML_PER_KWH = 1500; // ml of water used per kWh
   
   // NEW: Real-world overhead factors
+  // These factors account for the full energy stack of AI inference
+  // Each multiplier represents a different aspect of real-world deployment
   const DATACENTER_OVERHEAD_FACTOR = 2.5; // Power usage effectiveness (PUE) for data centers
   const IDLE_LOAD_FACTOR = 1.7; // Servers maintaining model in memory and context handling
   const NETWORK_OVERHEAD_FACTOR = 1.15; // Network transmission energy
@@ -429,9 +550,12 @@ async function calculateEnergy(prompt) {
   const openness = getOpennessScore(prompt);
   
   // Base energy calculation
+  // This is the theoretical minimum energy for token processing
+  // Example: 1000 tokens → 0.002 kWh base energy
   const baseKWh = (totalTokens / 1000) * BASE_KWH_PER_1000_TOKENS;
   
   // Calculate modifiers based on reasoning and openness (increased for more accurate estimates)
+  // Different reasoning levels require different computational intensities
   let reasoningModifier = 0;
   switch(reasoningLevel) {
     case 3: reasoningModifier = 0.8; break; // Increased from 0.5
@@ -439,6 +563,7 @@ async function calculateEnergy(prompt) {
     case 1: reasoningModifier = 0.15; break; // Increased from 0.1
   }
   
+  // Different openness levels affect computation differently
   let opennessModifier = 0;
   switch(openness) {
     case 2: opennessModifier = 0.4; break; // Increased from 0.3
@@ -447,10 +572,13 @@ async function calculateEnergy(prompt) {
   }
   
   // Apply complexity modifier (increased range 0-0.4)
+  // Vocabulary complexity affects processing intensity
+  // Example: Complex vocabulary with score 0.8 → modifier 0.32
   const complexityModifier = complexity * 0.4; // Increased from 0.3
   
   // Add inference overhead factor for model parallelism and attention mechanisms
   // Higher for complex, reasoning-heavy prompts
+  // Example: Complex reasoning (3) with complexity 0.7 → overhead 0.3
   let inferenceOverhead = 0.1; // Base overhead
   if (reasoningLevel === 3 && complexity > 0.6) {
     inferenceOverhead = 0.3; // Higher overhead for complex reasoning with complex vocabulary
@@ -459,13 +587,20 @@ async function calculateEnergy(prompt) {
   }
   
   // Calculate total modifier
+  // This combines all factors affecting energy usage
+  // Example: reasoningMod 0.8 + opennessMod 0.4 + complexityMod 0.32 + overhead 0.3 = 1.82
+  // Total modifier = 1 + 1.82 = 2.82x base energy
   const totalModifier = 1 + reasoningModifier + opennessModifier + complexityModifier + inferenceOverhead;
   
   // Direct inference energy calculation (theoretical)
+  // This represents the energy used directly by the neural network computation
+  // Example: baseKWh 0.002 * modifier 2.82 = 0.00564 kWh
   const directKWh = baseKWh * totalModifier;
   const directWaterUsageMl = directKWh * WATER_USAGE_ML_PER_KWH;
   
   // NEW: Calculate real-world total energy with overhead factors
+  // This accounts for all the infrastructure and systems supporting the inference
+  // Example: directKWh 0.00564 * all factors = 0.0712 kWh
   const realWorldKWh = directKWh * DATACENTER_OVERHEAD_FACTOR * IDLE_LOAD_FACTOR * 
                        NETWORK_OVERHEAD_FACTOR * AMORTIZED_TRAINING_FACTOR * PRODUCTION_ENVIRONMENT_FACTOR;
   const realWorldWaterUsageMl = realWorldKWh * WATER_USAGE_ML_PER_KWH;
@@ -490,7 +625,19 @@ async function calculateEnergy(prompt) {
   };
 }
 
-// Command-line interface
+/**
+ * Creates and manages the command-line interface for the application
+ * 
+ * Sets up readline interface and processes user input for energy analysis
+ * or handling special commands like 'stats', 'reset', and 'exit'
+ * 
+ * @returns {void}
+ * 
+ * @example
+ * // Start the CLI interface
+ * createInterface();
+ * // User can then enter prompts or commands
+ */
 function createInterface() {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -584,7 +731,19 @@ function createInterface() {
   });
 }
 
-// New function to display total statistics
+/**
+ * Displays cumulative energy and water usage statistics
+ * 
+ * Shows running totals of energy, water, prompts, and tokens processed
+ * and provides real-world comparisons for better context
+ * 
+ * @returns {void}
+ * 
+ * @example
+ * // Display current session statistics
+ * displayTotalStats();
+ * // Shows cumulative energy, water usage, number of prompts and tokens
+ */
 function displayTotalStats() {
   console.log("\n=== CUMULATIVE ENERGY USAGE ===");
   console.log(`Total Energy: ${(totalRealWorldKWh * 1000).toFixed(2)} Wh`);
@@ -601,7 +760,18 @@ function displayTotalStats() {
   console.log(`Equivalent to powering a 10W LED bulb for ${totalLightBulbHours} hours`);
 }
 
-// New function to reset all counters
+/**
+ * Resets all global counters to zero
+ * 
+ * Allows users to start fresh measurement sessions
+ * 
+ * @returns {void}
+ * 
+ * @example
+ * // Reset all counters to zero
+ * resetStats();
+ * // All global counters are now set to 0
+ */
 function resetStats() {
   totalPrompts = 0;
   totalTokens = 0;

@@ -1,6 +1,37 @@
-// How Wet is AI? - Water & Energy Impact Tracker
+/**
+ * How Wet is AI? - Water & Energy Impact Tracker
+ * 
+ * This file manages the popup UI for the Chrome extension, displaying water
+ * and energy usage statistics for ChatGPT conversations.
+ * 
+ * Key functionality:
+ * - Tab navigation between Statistics and Prompts views
+ * - Loading and displaying statistics from different time periods
+ * - Visualizing water usage with animated graphics
+ * - Exporting conversation history in JSON and CSV formats
+ * 
+ * UI Components:
+ * - Water cup visualization with dynamic fill level
+ * - Statistical counters for energy and water usage
+ * - Prompt history list with timestamps
+ * - Data sharing toggle for anonymized reporting
+ * 
+ * @author How Wet is AI? Team
+ * @version 1.0.0
+ */
 
-// Initialize the UI
+/**
+ * Initialize the UI
+ * 
+ * Sets up the extension popup with loading animation
+ * Delays full initialization to improve perceived performance
+ * 
+ * INPUT: None (triggered by DOM content loaded event)
+ * OUTPUT: Initialized popup interface
+ * EXAMPLE: When popup opens, shows loading animation, then transitions to app
+ * 
+ * Uses setTimeout for smoother visual transitions
+ */
 document.addEventListener('DOMContentLoaded', async () => {
   // Show loading animation first
   const loadingScreen = document.getElementById('loading-screen');
@@ -15,7 +46,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   }, 1500);
 });
 
-// App initialization moved to separate function
+/**
+ * Initialize the application components
+ * 
+ * Sets up tabs, loads statistics, and configures event listeners
+ * Checks for source parameter to determine if overlay should be shown
+ * 
+ * INPUT: None
+ * OUTPUT: Fully initialized application
+ * EXAMPLE: initializeApp() sets up all interactive elements and displays initial data
+ * 
+ * Separating initialization improves code organization and testability
+ */
 function initializeApp() {
   // Setup tab navigation
   setupTabs();
@@ -34,7 +76,18 @@ function initializeApp() {
   }
 }
 
-// Setup tab navigation
+/**
+ * Setup tab navigation system
+ * 
+ * Configures tab navigation between Statistics and Prompts views
+ * 
+ * INPUT: None
+ * OUTPUT: Configured tab navigation system
+ * EXAMPLE: Clicking "Statistics" tab shows statistics content and hides prompts content
+ * 
+ * Uses event delegation for efficiency
+ * Applies CSS classes to show/hide appropriate content
+ */
 function setupTabs() {
   const tabs = document.querySelectorAll('.tab');
   const tabContents = document.querySelectorAll('.tab-content');
@@ -55,7 +108,18 @@ function setupTabs() {
   });
 }
 
-// Load statistics and update UI
+/**
+ * Load statistics and update UI
+ * 
+ * Loads conversation history and updates statistics display
+ * 
+ * INPUT: None
+ * OUTPUT: Updated UI with latest statistics and prompts list
+ * EXAMPLE: loadStats() fetches data and updates counters, water visualization
+ * 
+ * Uses async/await for clean promise handling
+ * Error handling for data loading issues
+ */
 async function loadStats() {
   try {
     // Load conversation history
@@ -73,7 +137,18 @@ async function loadStats() {
   }
 }
 
-// Update the stats display for the selected period
+/**
+ * Update the statistics display for the selected period
+ * 
+ * Updates all UI elements with statistics for the selected time period
+ * 
+ * INPUT: period - String representing time period ('today', 'week', 'month', 'all')
+ * OUTPUT: Updated UI elements with new statistics
+ * EXAMPLE: updateStatsDisplay('week') shows statistics for the current week
+ * 
+ * Contains intelligent formatting for different units (ml/L, Wh/kWh)
+ * Animates the water cup fill level based on usage
+ */
 function updateStatsDisplay(period) {
   const stats = window.energyStats.getStatsByPeriod(period);
   
@@ -146,7 +221,18 @@ function updateStatsDisplay(period) {
   });
 }
 
-// Update the prompts list
+/**
+ * Update the prompts list in the UI
+ * 
+ * Populates the prompts tab with recorded conversations
+ * 
+ * INPUT: None (uses conversation history from energyStats)
+ * OUTPUT: Updated UI with list of recorded prompts
+ * EXAMPLE: updatePromptsList() displays all recorded prompts with timestamps and impact data
+ * 
+ * Sorts prompts by timestamp (newest first)
+ * Truncates very long prompts for better display
+ */
 function updatePromptsList() {
   const conversationList = document.getElementById('conversation-list');
   const history = window.energyStats.conversationHistory;
@@ -207,7 +293,18 @@ function updatePromptsList() {
   });
 }
 
-// Setup event listeners
+/**
+ * Setup event listeners for UI elements
+ * 
+ * Configures all interactive elements in the UI
+ * 
+ * INPUT: None
+ * OUTPUT: Configured event listeners
+ * EXAMPLE: Clicking "Export JSON" button triggers exportAsJSON function
+ * 
+ * Uses event delegation where appropriate
+ * Initializes toggle states from saved preferences
+ */
 function setupEventListeners() {
   // Period selector
   document.getElementById('time-period').addEventListener('change', function() {
@@ -241,7 +338,18 @@ function setupEventListeners() {
   }
 }
 
-// Export history as JSON
+/**
+ * Export conversation history as JSON
+ * 
+ * Creates and triggers download of conversation history in JSON format
+ * 
+ * INPUT: None (gets data from energyStats)
+ * OUTPUT: Downloaded JSON file with conversation history
+ * EXAMPLE: User clicks "Export JSON" and receives a file with all recorded data
+ * 
+ * Uses data URI approach for browser downloads
+ * Includes date in filename for better organization
+ */
 function exportAsJSON() {
   const history = window.energyStats.conversationHistory;
   
@@ -264,7 +372,18 @@ function exportAsJSON() {
   document.body.removeChild(linkElement);
 }
 
-// Export history as CSV
+/**
+ * Export history as CSV
+ * 
+ * Creates and triggers download of conversation history in CSV format
+ * 
+ * INPUT: None (gets data from energyStats)
+ * OUTPUT: Downloaded CSV file with conversation history
+ * EXAMPLE: User clicks "Export CSV" and receives a CSV file with all prompt data
+ * 
+ * Properly escapes CSV content (handles quotes in text)
+ * Uses data URI approach for browser downloads
+ */
 function exportAsCSV() {
   const history = window.energyStats.conversationHistory;
   
@@ -302,7 +421,18 @@ function exportAsCSV() {
   document.body.removeChild(linkElement);
 }
 
-// Clear history
+/**
+ * Clear conversation history
+ * 
+ * Removes all recorded conversations after confirmation
+ * 
+ * INPUT: None (user confirmation via dialog)
+ * OUTPUT: Cleared history if confirmed
+ * EXAMPLE: User clicks "Clear History", confirms, and all recorded data is removed
+ * 
+ * Uses confirmation dialog to prevent accidental data loss
+ * Sends message to content script to clear localStorage data
+ */
 function clearHistory() {
   if (confirm('Are you sure you want to clear all conversation history? This cannot be undone.')) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -319,7 +449,17 @@ function clearHistory() {
   }
 }
 
-// Function to send a message to the active tab to trigger the history overlay
+/**
+ * Trigger the history overlay in the content script
+ * 
+ * Sends a message to the active tab to display the history overlay
+ * 
+ * INPUT: None
+ * OUTPUT: Message sent to content script
+ * EXAMPLE: triggerHistoryOverlay() shows history overlay in ChatGPT page
+ * 
+ * Uses Chrome messaging API to communicate with content script
+ */
 function triggerHistoryOverlay() {
   chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
     chrome.tabs.sendMessage(tabs[0].id, { action: "showHistoryOverlay" });

@@ -1,6 +1,37 @@
-// ChatGPT Energy Statistics Calculator
-
+/**
+ * ChatGPT Energy Statistics Calculator
+ * 
+ * This module provides functionality for calculating, tracking, and reporting 
+ * the environmental impact (energy usage and water consumption) of ChatGPT interactions.
+ * 
+ * Key features:
+ * - Load conversation history from ChatGPT
+ * - Calculate energy and water usage based on token counts
+ * - Generate user-friendly environmental comparisons
+ * - Anonymously report aggregated data to central server
+ * 
+ * Data privacy:
+ * - Uses pseudonymous IDs to avoid tracking personally identifiable information
+ * - Users can opt in/out of data reporting
+ * 
+ * Efficiency considerations:
+ * - Uses Chrome storage for persistence with minimal overhead
+ * - Implements delta updates to avoid redundant data reporting
+ * 
+ * @author How Wet is AI? Team
+ * @version 1.0.0
+ */
 class EnergyStatisticsCalculator {
+  /**
+   * Initialize the energy statistics calculator
+   * 
+   * Sets up the conversation history storage and data reporting settings
+   * Loads user preferences from Chrome storage
+   * 
+   * INPUT: None
+   * OUTPUT: Configured calculator instance
+   * EXAMPLE: const calculator = new EnergyStatisticsCalculator();
+   */
   constructor() {
     this.conversationHistory = [];
     this.loaded = false;
@@ -14,6 +45,20 @@ class EnergyStatisticsCalculator {
     });
   }
   
+  /**
+   * Load conversation history from the active ChatGPT tab
+   * 
+   * Attempts multiple methods to retrieve history:
+   * 1. Request via content script message
+   * 2. Direct localStorage access via chrome.scripting API
+   * 
+   * INPUT: None
+   * OUTPUT: Promise resolving to conversation history array
+   * EXAMPLE: await energyStats.loadConversationHistory() // Returns array of conversations
+   * 
+   * Error handling for multiple fallback approaches
+   * Uses async/await pattern for cleaner promise handling
+   */
   async loadConversationHistory() {
     return new Promise((resolve) => {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -66,7 +111,18 @@ class EnergyStatisticsCalculator {
     });
   }
   
-  // Get statistics for a specific time period
+  /**
+   * Get statistics for a specific time period
+   * 
+   * Filters conversation history based on specified time range
+   * Calculates aggregated energy and water usage metrics
+   * 
+   * INPUT: period - String representing time period ('today', 'week', 'month', 'all')
+   * OUTPUT: Statistics object containing usage metrics and filtered prompts
+   * EXAMPLE: getStatsByPeriod('week') // Returns statistics for current week
+   * 
+   * Optimized for performance by calculating everything in a single pass
+   */
   getStatsByPeriod(period) {
     if (!this.loaded) {
       return null; // Not loaded yet
@@ -128,7 +184,18 @@ class EnergyStatisticsCalculator {
     };
   }
   
-  // Generate environmental impact comparisons
+  /**
+   * Generate environmental impact comparisons
+   * 
+   * Creates user-friendly comparisons to help understand the impact
+   * Dynamically selects appropriate comparisons based on usage levels
+   * 
+   * INPUT: stats - Statistics object from getStatsByPeriod()
+   * OUTPUT: String with human-readable comparisons
+   * EXAMPLE: generateEcoComparisons(stats) // Returns "Your energy usage (0.125 Wh) is less than what your smartphone uses during a quick charge."
+   * 
+   * Uses conditional logic to select relevant comparisons at different scales
+   */
   generateEcoComparisons(stats) {
     if (!stats) return "No data available for comparisons.";
     
@@ -167,7 +234,19 @@ class EnergyStatisticsCalculator {
     return comparisons.join(' ');
   }
   
-  // New method to submit water usage to the backend
+  /**
+   * Submit water usage data to the backend server
+   * 
+   * Only submits if data reporting is enabled by user
+   * Uses delta reporting to only submit new data
+   * 
+   * INPUT: waterUsageML - Total water usage in milliliters
+   * OUTPUT: Promise resolving to boolean success indicator
+   * EXAMPLE: await submitWaterUsage(250.5) // Submits 250.5ml to server
+   * 
+   * Uses pseudonymous ID system for privacy
+   * Error handling for network issues
+   */
   async submitWaterUsage(waterUsageML) {
     if (!this.dataReportingEnabled) return false;
     
@@ -211,7 +290,18 @@ class EnergyStatisticsCalculator {
     }
   }
   
-  // Generate a pseudonymous ID for reporting
+  /**
+   * Generate a pseudonymous ID for reporting
+   * 
+   * Creates or retrieves a user identifier that doesn't contain PII
+   * 
+   * INPUT: None
+   * OUTPUT: String containing pseudonymous user ID
+   * EXAMPLE: generateAnonymousId() // Returns "user-a7b9c3"
+   * 
+   * Uses localStorage for persistence across sessions
+   * Avoids tracking personal information
+   */
   generateAnonymousId() {
     // Check if we already have an ID stored
     const storedId = localStorage.getItem('hwiai-anonymous-id');
@@ -223,7 +313,18 @@ class EnergyStatisticsCalculator {
     return newId;
   }
   
-  // Toggle data reporting setting
+  /**
+   * Toggle data reporting setting
+   * 
+   * Enables/disables anonymous data reporting to server
+   * 
+   * INPUT: enabled - Boolean indicating whether reporting should be enabled
+   * OUTPUT: None
+   * EXAMPLE: toggleDataReporting(true) // Enables data reporting
+   * 
+   * Persists setting in Chrome storage
+   * Submits accumulated data if newly enabled
+   */
   toggleDataReporting(enabled) {
     this.dataReportingEnabled = enabled;
     chrome.storage.local.set({dataReportingEnabled: enabled});
@@ -234,7 +335,17 @@ class EnergyStatisticsCalculator {
     }
   }
   
-  // Submit accumulated data if opted-in
+  /**
+   * Submit all accumulated data if opted-in
+   * 
+   * Submits total water usage data when user opts into reporting
+   * 
+   * INPUT: None
+   * OUTPUT: None (submits data to server if enabled)
+   * EXAMPLE: submitAccumulatedData() // Submits all water usage data if enabled
+   * 
+   * Only runs if data reporting is enabled
+   */
   async submitAccumulatedData() {
     if (!this.dataReportingEnabled) return;
     

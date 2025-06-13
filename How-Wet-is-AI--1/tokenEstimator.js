@@ -1,14 +1,49 @@
 /**
  * Smart response token estimator for GPT-4 prompts
  * Uses pattern recognition and content analysis to predict response length
+ * 
+ * Purpose: Accurately predict the token consumption of GPT-4 responses based on 
+ * prompt content and structure. This helps in calculating energy usage and water
+ * consumption estimates.
+ * 
+ * @module tokenEstimator
+ * @author Anonymous
+ * @version 1.0.0
  */
 
-// Token estimation based on word count and pattern recognition
+/**
+ * Estimates the number of tokens GPT-4 will likely use when responding to a prompt
+ * 
+ * The function analyzes prompt content using pattern matching to identify request types:
+ * - Simple factual queries (low token count)
+ * - Code generation requests (variable token count based on line count and language)
+ * - Creative writing requests (high token count)
+ * - Socio-political topics (medium to high token count)
+ * - Other requests with various modifiers
+ * 
+ * @param {string} prompt - The user's input prompt text
+ * @param {number} promptTokenCount - The token count of the input prompt
+ * @returns {number} The estimated number of tokens the model will generate in response
+ * 
+ * @example
+ * // Simple factual query
+ * estimateResponseTokens("What is the capital of France?", 7) // Returns ~20 tokens
+ * 
+ * @example
+ * // Code generation request
+ * estimateResponseTokens("Write 100 lines of Python code for a web scraper", 12) // Returns ~3600 tokens
+ * 
+ * @example
+ * // Creative writing request
+ * estimateResponseTokens("Write a short story about a detective solving a mystery", 11) // Returns ~700 tokens
+ */
 function estimateResponseTokens(prompt, promptTokenCount) {
   const lower = prompt.toLowerCase();
   
   // Check for simple factual queries that require very short responses
   // These typically return just a few words or a simple list
+  // This pattern matching improves efficiency by quickly identifying prompts
+  // that will have minimal responses, avoiding unnecessary computation
   const simpleFactualPatterns = [
     // Simple name/list requests with small number limits
     /\bname\s+(\d+|a|an|some|few)\s+.*\b/i,
@@ -40,6 +75,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   const isSimpleFactualQuery = simpleFactualPatterns.some(pattern => pattern.test(lower));
   
   // If it's a simple factual query, return a much lower token count
+  // This optimization significantly improves estimation accuracy for common questions
+  // Example: "What is the capital of France?" → ~20 tokens
   if (isSimpleFactualQuery) {
     // Extract number if present to refine the estimate
     const numberMatch = lower.match(/\b(\d+)\b/);
@@ -56,11 +93,14 @@ function estimateResponseTokens(prompt, promptTokenCount) {
     }
     
     // Default for simple factual queries without numbers or with larger numbers
+    // Example: "Who was the first person to climb Mt. Everest?" → ~50 tokens
     return Math.max(promptTokenCount * 1.2, 20);
   }
   
   // NEW: Enhanced code generation detection with better line count recognition
   // This covers more patterns like "need java program that is 1000 lines" and variations
+  // More versatile regex patterns improve detection accuracy across different phrasings
+  // Example: "I need a Java program that is 500 lines long" → ~22500 tokens
   const codeGenerationPatterns = [
     // Standard pattern: write/create/generate X lines of code in Y
     /(?:write|create|generate|make|code|program|script|develop)\s+(?:a|an|the)?\s*(\d+)\s*(?:line|lines)\s+(?:of\s+)?(?:code|program|script|application|app)?\s+(?:that\s+is\s+like\s+)?(?:in|using|with)?\s+(\w+)/i,
@@ -77,6 +117,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   ];
   
   // Try each pattern to find code generation requests
+  // This approach allows flexibility in how code requests are phrased
+  // Example: "Write 50 lines of Python code to scrape a website" → ~1500 tokens
   for (const pattern of codeGenerationPatterns) {
     const match = lower.match(pattern);
     if (match) {
@@ -130,6 +172,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
       const avgTokensPerLine = tokensPerLine[language] || tokensPerLine.default;
       
       // Calculate total tokens based on line count with a small overhead factor for explanations
+      // This calculation accounts for language-specific verbosity and explanation text
+      // Example: "Create 200 lines of JavaScript" → ~8400 tokens
       const baseTotalTokens = lineCount * avgTokensPerLine * 1.2;
       const tokenEstimate = Math.min(baseTotalTokens, 120000); // Cap at 120K tokens for realistic limits
       
@@ -140,6 +184,7 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // OLD: Check for code generation with explicit line count - keep for backward compatibility
+  // Example: "Write 100 lines of code in Python" → ~3000 tokens
   const codeGenerationLineCountMatch = lower.match(/(?:write|create|generate|make|code|program|script|develop)\s+(?:a|an|the)?\s*(\d+)\s*(?:line|lines)\s+(?:of\s+)?(?:code|program|script|application|app)?\s+(?:that\s+is\s+like\s+)?(?:in|using|with)?\s+(\w+)/i);
   
   if (codeGenerationLineCountMatch) {
@@ -179,6 +224,7 @@ function estimateResponseTokens(prompt, promptTokenCount) {
     const tokenEstimate = Math.min(baseTotalTokens, 120000); // Cap at 120K tokens for realistic limits
     
     // If extremely large request, add comment about token limitations
+    // Example: "Write 5000 lines of Java code" → ~225000 tokens (would be capped)
     if (lineCount > 1000) {
       console.log(`Note: Request for ${lineCount} lines of ${language} code would require approximately ${baseTotalTokens} tokens, which exceeds model context limits.`);
       return tokenEstimate;
@@ -188,6 +234,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Check for socio-political topics that tend to receive nuanced, longer responses
+  // These topics typically require multi-faceted perspectives and explanations
+  // Example: "Explain why healthcare systems differ between countries" → ~700 tokens
   const sociopoliticalPatterns = [
     // Political systems and governance
     /\b(?:government|congress|senate|parliament|democracy|republic|dictatorship|monarchy)\b/i,
@@ -206,15 +254,19 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   ];
   
   // Check if prompt contains "why" or explanation requests about socio-political topics
+  // Questions asking "why" about complex topics require detailed responses
+  // Example: "Why is immigration policy controversial?" → ~800 tokens
   const isWhyQuestion = /\b(?:why|reason|explain why|tell me why)\b/i.test(lower);
   const containsSociopoliticalTopic = sociopoliticalPatterns.some(pattern => pattern.test(lower));
   
   if (isWhyQuestion && containsSociopoliticalTopic) {
     // These tend to be longer as they explain complex systems with multiple perspectives
+    // Example: "Why do countries have different approaches to healthcare?" → ~750 tokens
     return Math.max(200, promptTokenCount * 5); // Minimum 200 tokens, typically more
   }
   
   // For general socio-political topics (even without explicit "why")
+  // Example: "Discuss healthcare systems in Europe" → ~600 tokens
   if (containsSociopoliticalTopic) {
     // Check for opinion indicators that suggest presenting multiple perspectives
     const hasOpinionIndicator = /\b(?:think|opinion|view|stance|position|perspective|debate|controversy)\b/i.test(lower);
@@ -227,6 +279,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // First, check for creative writing requests explicitly - these need special handling
+  // Creative writing typically generates much longer responses
+  // Example: "Write a short story about a detective" → ~1200 tokens
   const creativeWritingPatterns = [
     /\b(?:write|create|generate|make)\s+(?:a|an|some|the)?\s*(?:story|narrative|tale|fiction|novel|fanfic|fan\s*fic|fan\s*fiction|short\s*story)/i,
     /\bfan\s*fic(?:tion)?/i,
@@ -235,6 +289,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   ];
   
   // Check if this is a creative writing request
+  // Creative writing has distinctive linguistic patterns for detection
+  // Example: "Write a scary story about a haunted house" → ~1500 tokens
   if (creativeWritingPatterns.some(pattern => pattern.test(lower))) {
     // Creative writing requests usually get longer responses
     // Minimum 500 tokens for any creative writing request (roughly 350-400 words)
@@ -257,10 +313,13 @@ function estimateResponseTokens(prompt, promptTokenCount) {
     }
     
     // Default creative writing length
+    // Example: "Write a story about space exploration" → ~1400 tokens
     return Math.max(baseCreativeLength, promptTokenCount * 7);
   }
   
   // NEW: Enhanced pattern for detecting line count requests more broadly for any language or context
+  // This handles non-code line count requests
+  // Example: "Write 50 lines of text about climate change" → ~1750 tokens
   const lineCountMatch = lower.match(/(\d{2,})\s*(?:line|lines)\s+(?:of\s+)?(?:code|program|script|text|content)/i);
   if (lineCountMatch) {
     const lineCount = parseInt(lineCountMatch[1], 10);
@@ -285,6 +344,7 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Much broader regex for word count requests - catches more patterns
+  // Example: "Write a 500 word essay about renewable energy" → ~650 tokens
   const wordCountMatch = lower.match(/(\d{3,})\s*(?:word|words|wor(?:ds)?)/i);
   if (wordCountMatch) {
     const wordCount = parseInt(wordCountMatch[1], 10);
@@ -293,6 +353,7 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // More flexible pattern to catch variations like "write a 10000 word ai prompt"
+  // Example: "Write a 1000 word research paper" → ~1300 tokens
   const wordCountAltMatch = lower.match(/(?:write|create|generate|make)(?:\s+\w+){0,3}\s+(\d{3,})\s*(?:word|words|wor(?:ds)?)/i);
   if (wordCountAltMatch) {
     const wordCount = parseInt(wordCountAltMatch[1], 10);
@@ -300,6 +361,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Check for page count requests
+  // Pages are converted to approximate word count and then to tokens
+  // Example: "Write a 3 page essay on climate change" → ~1950 tokens
   const pageCountMatch = lower.match(/(\d+)\s+page(s)?\s+(essay|story|article|text|paper|document|response|writing)/);
   if (pageCountMatch) {
     const pageCount = parseInt(pageCountMatch[1], 10);
@@ -308,6 +371,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Check for "tell me about X" pattern which often gets medium-sized responses
+  // These are informational requests that require explanatory responses
+  // Example: "Tell me about quantum computing" → ~420 tokens
   const tellMeAboutMatch = /\btell\s+(?:me|us)\s+(?:about|why|how)\s+.{3,}/i.test(lower);
   if (tellMeAboutMatch) {
     // Open-ended "tell me about" questions typically get medium responses
@@ -316,6 +381,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Check for specific content type indicators that suggest response length
+  // Different content types have characteristic token requirements
+  // Example: "Write a poem about nature" → ~300 tokens
   const contentTypes = {
     // Creative writing (typically verbose)
     "essay": 2000,
@@ -687,6 +754,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   };
   
   // Improve content type detection with fuzzy matching for key terms
+  // This handles variations and imprecise terminology
+  // Example: "Write a fic about Harry Potter" → ~1800 tokens (maps to "fanfiction")
   const fuzzyContentTypes = {
     // Map variations to canonical content types
     "fic": "fanfiction",
@@ -698,6 +767,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   };
   
   // Check for fuzzy content type matches first
+  // This helps catch informal terminology and variations
+  // Example: "Write some prose about city life" → ~1000 tokens (maps to "story")
   for (const [fuzzyType, canonicalType] of Object.entries(fuzzyContentTypes)) {
     if (lower.includes(fuzzyType)) {
       // Use the canonical type's token estimate
@@ -708,6 +779,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Check for content type indicators with improved pattern matching
+  // Comprehensive list of content types with estimated token requirements
+  // Example: "Write a research paper on quantum computing" → ~2500 tokens
   for (const [type, tokenEstimate] of Object.entries(contentTypes)) {
     // Check different verb patterns (write, create, make, generate) followed by article + type
     if (lower.match(new RegExp(`(?:write|create|generate|make)\\s+(?:an?|the)?\\s+${type}\\b`, 'i'))) {
@@ -726,6 +799,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Detect numeric indicators of length in various formats
+  // Handles K notation (5K), comma format (5,000), and word numbers (five thousand)
+  // Example: "Write a 5K word essay" → ~6500 tokens
   const numericIndicators = [
     // Match patterns like "5k words", "5K word", etc.
     { pattern: /(\d+)k\s*word/i, multiplier: 1000 },
@@ -759,6 +834,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Detect writing style requests (some styles are more verbose)
+  // Different writing styles require different token counts
+  // Example: "Write in Shakespearean style about modern technology" → ~600 tokens
   const styles = {
     "shakespeare": 1.5,
     "shakespearean": 1.5,
@@ -777,6 +854,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   let styleMultiplier = 2.0;
   
   // Adjust multiplier based on detected styles
+  // Cumulative factors allow for precise estimation of combined style effects
+  // Example: "Write a detailed, academic analysis" → multiplier of ~3.9
   for (const [style, factor] of Object.entries(styles)) {
     if (lower.includes(style)) {
       styleMultiplier *= factor;
@@ -784,6 +863,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Check for list generation (lists tend to be longer)
+  // Lists have predictable structure but variable length
+  // Example: "List 10 ways to reduce carbon emissions" → ~700 tokens
   if (lower.includes("list") || 
       lower.match(/\d+\s+things/) || 
       lower.match(/\d+\s+ways/) || 
@@ -803,6 +884,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Look for length-related requests even without specific numbers
+  // Adjectives that indicate length expectations affect the estimate
+  // Example: "Give me a comprehensive explanation of quantum mechanics" → ~900 tokens
   const lengthIndicators = {
     "detailed": 1.5,
     "comprehensive": 2.0,
@@ -830,6 +913,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Check for "why" questions (which tend to get longer explanations)
+  // "Why" questions require causal explanations and reasoning
+  // Example: "Why is the sky blue?" → ~160 tokens
   if (lower.match(/^why\s+/i) || lower.includes(" why ")) {
     return Math.max(130, promptTokenCount * 3.5); // "Why" questions get longer responses
   }
@@ -838,6 +923,7 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   // Longer prompts often expect longer responses
   // Set higher minimum value for prompts that appear to be asking for content generation
   // but don't match our explicit patterns
+  // Example: "Write something about dogs" → ~300 tokens
   const contentCreationIndicators = [
     "write", "create", "generate", "produce", "compose", "author", "draft", "make"
   ];
@@ -846,11 +932,14 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   
   // Lower the minimum value from 300 to 100 for more accurate estimates on shorter prompts
   // But increase it for content creation requests
+  // Example: "Tell me about quantum physics" → ~250 tokens
   const baseEstimate = isContentCreationRequest 
     ? Math.max(promptTokenCount * 3, 300)  // Higher multiplier and minimum for content creation
     : Math.max(promptTokenCount * 1.5, 100);
   
   // Check for reasoning complexity modifiers
+  // Requests requiring explanation get longer responses
+  // Example: "Explain how nuclear fusion works" → ~400 tokens
   if (lower.includes("explain") || lower.includes("why")) {
     styleMultiplier *= 1.3;
   }
@@ -868,6 +957,8 @@ function estimateResponseTokens(prompt, promptTokenCount) {
   }
   
   // Apply the style multiplier to the base token count
+  // Final calculation that incorporates all detected factors
+  // Example: "Analyze and compare different AI approaches in detail" → ~800 tokens
   return Math.max(Math.ceil(baseEstimate * lengthMultiplier), 20);
 }
 

@@ -1,3 +1,23 @@
+/**
+ * Water Usage Tracking Server
+ * 
+ * This Express server tracks and aggregates water usage data from the "How Wet is AI?" Chrome extension.
+ * It provides API endpoints for submitting and retrieving water usage statistics.
+ * 
+ * Data Structure:
+ * - totalWaterML: Total water usage in milliliters
+ * - contributorCount: Number of unique users contributing data
+ * - submittedUsers: Object tracking per-user contributions
+ * - lastUpdated: Timestamp of the last data update
+ * 
+ * Efficiency considerations:
+ * - Uses simple JSON file storage for persistence without requiring a database
+ * - Implements delta updates to avoid double-counting contributions
+ * - Maintains backward compatibility with previous versions
+ * 
+ * @author How Wet is AI? Team
+ * @version 1.0.0
+ */
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -9,7 +29,14 @@ const PORT = 3000;
 // Data storage file
 const dataFilePath = path.join(__dirname, 'water-usage-data.json');
 
-// Initialize with default data if file doesn't exist
+/**
+ * Initialize data storage with default values if file doesn't exist
+ * INPUT: None
+ * OUTPUT: JSON file with initial data structure
+ * EXAMPLE: When server first runs, it creates a water-usage-data.json file with 0 water usage
+ * 
+ * Using synchronous file operations here is appropriate since this only runs once at startup
+ */
 if (!fs.existsSync(dataFilePath)) {
   const initialData = {
     totalWaterML: 0,
@@ -24,10 +51,31 @@ if (!fs.existsSync(dataFilePath)) {
 app.use(express.json());
 app.use(cors()); // Allow cross-origin requests for local testing
 
-// Serve static files from the website directory
+/**
+ * Serve static files from the website directory
+ * Enables hosting the landing page and extension information
+ * Uses Express's built-in static file server for efficiency
+ * Future enhancement: Could add caching headers for better performance
+ */
 app.use(express.static(path.join(__dirname, 'website')));
 
-// API endpoint to get current water usage stats
+/**
+ * GET /api/water-usage - Retrieve current water usage statistics
+ * 
+ * INPUT: None
+ * OUTPUT: JSON object with water usage statistics:
+ * {
+ *   totalWaterML: 12500,
+ *   contributorCount: 25,
+ *   submittedUsers: {...},
+ *   lastUpdated: "2023-06-01T12:00:00Z"
+ * }
+ * 
+ * EXAMPLE: A browser requests GET http://localhost:3000/api/water-usage
+ * and receives the current statistics in JSON format
+ * 
+ * Error handling included for file reading issues
+ */
 app.get('/api/water-usage', (req, res) => {
   try {
     const data = JSON.parse(fs.readFileSync(dataFilePath));
@@ -38,7 +86,29 @@ app.get('/api/water-usage', (req, res) => {
   }
 });
 
-// API endpoint to submit water usage from extension
+/**
+ * POST /api/submit-usage - Submit water usage data from extension
+ * 
+ * INPUT: JSON object in request body:
+ * {
+ *   waterUsageML: 250.5,        // Current total water usage from user
+ *   userId: "user-abc123",      // Anonymous ID for tracking unique users
+ *   previouslySubmitted: 125.2  // Optional: Previous submission amount
+ * }
+ * 
+ * OUTPUT: JSON response with updated statistics:
+ * {
+ *   success: true,
+ *   message: "Water usage data recorded successfully",
+ *   totalWaterML: 10250.5,
+ *   contributorCount: 42
+ * }
+ * 
+ * EXAMPLE: Extension sends POST with 100ml new usage, server adds it to the total
+ * 
+ * Efficiency: Uses delta calculation to only add new water usage
+ * Error handling for invalid inputs and file operations
+ */
 app.post('/api/submit-usage', (req, res) => {
   try {
     const { waterUsageML, userId, previouslySubmitted } = req.body;
@@ -98,7 +168,15 @@ app.post('/api/submit-usage', (req, res) => {
   }
 });
 
-// Start the server
+/**
+ * Start the server and listen for incoming connections
+ * 
+ * INPUT: PORT number (3000)
+ * OUTPUT: Console logs with server information
+ * EXAMPLE: Server starts and logs "Water tracking server running at http://localhost:3000"
+ * 
+ * Logs available endpoints for developer convenience
+ */
 app.listen(PORT, () => {
   console.log(`Water tracking server running at http://localhost:${PORT}`);
   console.log(`API endpoints available at:`);
