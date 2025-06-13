@@ -73,6 +73,7 @@ function updateStatsDisplay(period) {
   const promptCountEl = document.getElementById('prompt-count');
   const tokenCountEl = document.getElementById('token-count');
   const ecoComparisonEl = document.getElementById('eco-comparison-text');
+  const waterCupEl = document.getElementById('water');
   
   // Format energy value (use Wh for small values, kWh for larger)
   let energyDisplay;
@@ -95,6 +96,12 @@ function updateStatsDisplay(period) {
   totalWaterEl.textContent = waterDisplay;
   promptCountEl.textContent = stats.totalPrompts.toString();
   tokenCountEl.textContent = stats.totalTokens.toLocaleString();
+  
+  // Update water cup fill level
+  // Calculate fill percentage based on water usage (ml * 0.1)
+  // Cap at 100% to avoid overflow
+  const fillLevel = Math.min(stats.totalWaterMl * 0.1, 100);
+  waterCupEl.style.height = fillLevel + '%';
   
   // Generate and display eco-comparison
   ecoComparisonEl.textContent = window.energyStats.generateEcoComparisons(stats);

@@ -4,25 +4,34 @@
   <title>How Wet is AI?</title>
   <style>
     body {
-      width: 450px;
-      max-height: 500px;
-      overflow-y: auto;
+      width: 380px;
+      height: 600px;
       font-family: Arial, sans-serif;
       margin: 0;
-      padding: 10px;
+      padding: 15px;
       background-color: #ffffff;
       color: #0D47A1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-y: auto;
     }
+    
     h1 {
-      font-size: 20px;
-      margin-bottom: 10px;
+      font-size: 22px;
+      margin-bottom: 20px;
       color: #0D47A1;
+      text-align: center;
     }
+    
     .tabs {
       display: flex;
       margin-bottom: 15px;
       border-bottom: 1px solid #2196F3;
+      width: 100%;
+      justify-content: center;
     }
+    
     .tab {
       padding: 8px 15px;
       cursor: pointer;
@@ -33,6 +42,7 @@
       border-radius: 4px 4px 0 0;
       color: #0D47A1;
     }
+    
     .tab.active {
       background: white;
       border-bottom: 1px solid white;
@@ -40,31 +50,53 @@
       font-weight: bold;
       color: #2196F3;
     }
+    
     .tab-content {
       display: none;
+      width: 100%;
+      text-align: center;
     }
+    
     .tab-content.active {
       display: block;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
+    
     .stats-container {
-      margin-bottom: 20px;
-      padding: 10px;
+      width: 90%;
+      margin: 10px auto;
+      padding: 15px;
       background-color: #E3F2FD;
-      border-radius: 6px;
+      border-radius: 10px;
       border: 1px solid #BBDEFB;
+      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
     }
+    
     .stat-box {
       display: flex;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      text-align: left;
     }
+    
     .stat-label {
       width: 120px;
       font-weight: bold;
     }
+    
     .stat-value {
       flex: 1;
     }
+    
+    .water-usage-display {
+      margin: 15px 0;
+      font-size: 18px;
+      font-weight: bold;
+      color: #1976D2;
+    }
+    
     .progress-bar {
       height: 10px;
       background: #BBDEFB;
@@ -72,22 +104,27 @@
       margin-top: 5px;
       overflow: hidden;
     }
+    
     .progress-fill {
       height: 100%;
       background: #2196F3;
       width: 0%;
     }
+    
     .prompt-item {
       border: 1px solid #BBDEFB;
       margin-bottom: 10px;
       padding: 8px;
-      border-radius: 4px;
+      border-radius: 8px;
+      width: 90%;
     }
+    
     .timestamp {
       color: #0D47A1;
       font-size: 12px;
       margin-bottom: 5px;
     }
+    
     .prompt {
       margin-bottom: 5px;
       white-space: pre-wrap;
@@ -95,6 +132,7 @@
       padding: 5px;
       border-radius: 3px;
     }
+    
     .environmental-impact {
       font-size: 12px;
       color: #0D47A1;
@@ -102,50 +140,130 @@
       padding-top: 5px;
       border-top: 1px dashed #BBDEFB;
     }
+    
     .controls {
-      margin-bottom: 10px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: center;
     }
+    
     button {
-      margin-right: 5px;
-      padding: 5px 10px;
+      margin: 0 5px;
+      padding: 8px 12px;
       background-color: #2196F3;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 5px;
       cursor: pointer;
+      transition: background-color 0.2s;
     }
+    
     button:hover {
       background-color: #1976D2;
     }
+    
     .empty-state {
       color: #0D47A1;
       font-style: italic;
     }
+    
     .eco-comparison {
-      margin-top: 10px;
-      padding: 10px;
+      margin: 10px 0;
+      padding: 15px;
       background-color: #E3F2FD;
-      border-radius: 5px;
+      border-radius: 8px;
       border-left: 3px solid #2196F3;
+      width: 90%;
+      text-align: left;
     }
+    
     .eco-comparison h3 {
       margin-top: 0;
       color: #2196F3;
+      text-align: center;
     }
+    
     .period-selector {
-      margin-bottom: 15px;
+      margin: 15px 0;
     }
+    
     select {
-      padding: 5px;
+      padding: 8px;
       border: 1px solid #BBDEFB;
-      border-radius: 4px;
+      border-radius: 5px;
       background-color: white;
       color: #0D47A1;
+    }
+    
+    /* Water cup visualization styles - unchanged */
+    .cup-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 15px 0;
+      transform: rotate(180deg); /* Flip the entire cup */
+    }
+    
+    .cup-label {
+      margin-bottom: 5px;
+      font-size: 12px;
+      color: #0D47A1;
+      text-align: center;
+    }
+    
+    .cup {
+      position: relative;
+      width: 60px;
+      height: 100px;
+      background: linear-gradient(to top, #ffffffcc, #e0e0e0);
+      border: 3px solid #BBDEFB;
+      border-radius: 10px 10px 30px 30px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transform: rotate(180deg); /* Flip the entire cup */
+    }
+    
+    .cup-rim {
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 100%;
+      height: 8px;
+      background: #BBDEFB;
+      border-radius: 50%;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 2;
+      transform: rotate(180deg);
+    }
+    
+    .water {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 0%;
+      background: linear-gradient(to top, #2196F3, #64B5F6);
+      border-bottom-left-radius: 5px;
+      border-bottom-right-radius: 5px;
+      transition: height 1.5s ease-in-out;
+      transform: rotate(180deg); /* flip water back upright */
     }
   </style>
 </head>
 <body>
   <h1>How Wet is AI?</h1>
+  
+  <!-- Cup visualization now directly below title -->
+  <div class="cup-container">
+    <div class="cup">
+      <div class="water" id="water"></div>
+      <div class="cup-rim"></div>
+    </div>
+  </div>
+  
+  <!-- New water usage display -->
+  <div class="water-usage-display">
+    You have used: <span id="total-water">Calculating...</span>
+  </div>
   
   <div class="tabs">
     <div class="tab active" data-tab="stats">Statistics</div>
@@ -168,11 +286,6 @@
       <div class="stat-box">
         <div class="stat-label">Total Energy:</div>
         <div class="stat-value" id="total-energy">Calculating...</div>
-      </div>
-      
-      <div class="stat-box">
-        <div class="stat-label">Total Water:</div>
-        <div class="stat-value" id="total-water">Calculating...</div>
       </div>
       
       <div class="stat-box">
