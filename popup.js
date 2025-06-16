@@ -41,10 +41,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadingScreen.classList.add('hidden');
     setTimeout(() => {
       loadingScreen.style.display = 'none';
-      initializeApp(); // Initialize the app after loading animation
+      checkSiteCompatibility(); // Check site compatibility before initializing
     }, 300); // Additional time for fade out animation
   }, 1500);
 });
+
+/**
+ * Check if the current site is a ChatGPT site
+ * 
+ * Verifies if the extension is being used on a compatible site
+ * Shows compatibility message if not on ChatGPT
+ * 
+ * INPUT: None
+ * OUTPUT: Boolean indicating if site is compatible
+ * EXAMPLE: If user opens extension on google.com, shows message that extension only works on ChatGPT
+ */
+function checkSiteCompatibility() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const currentTab = tabs[0];
+    const url = currentTab?.url || '';
+    
+    // Check if the URL is from ChatGPT domains
+    const isChatGPTSite = url.includes('chat.openai.com') || url.includes('chatgpt.com');
+    
+    if (isChatGPTSite) {
+      // On ChatGPT site, initialize the app
+      initializeApp();
+    } else {
+      // Not on ChatGPT, show compatibility message
+      const compatibilityMessage = document.getElementById('compatibility-message');
+      const mainContent = document.querySelector('h1');
+      
+      if (compatibilityMessage) {
+        compatibilityMessage.style.display = 'flex';
+      }
+      
+      // Hide main content
+      const allMainElements = document.querySelectorAll('body > *:not(#compatibility-message):not(#loading-screen)');
+      allMainElements.forEach(element => {
+        element.style.display = 'none';
+      });
+    }
+  });
+}
 
 /**
  * Initialize the application components
@@ -131,6 +170,15 @@ async function loadStats() {
     
     updateStatsDisplay(selectedPeriod);
     updatePromptsList();
+    
+    // Check if data reporting is enabled and submit latest data
+    chrome.storage.local.get('dataReportingEnabled', (result) => {
+      if (result.dataReportingEnabled === true) {
+        // Submit accumulated data if data reporting is enabled
+        // This ensures the data is sent whenever the popup is opened
+        window.energyStats.submitAccumulatedData();
+      }
+    });
   } catch (error) {
     console.error('Error loading statistics:', error);
     document.getElementById('total-energy').textContent = 'Error loading data';

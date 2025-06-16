@@ -638,6 +638,57 @@
     input:checked + .slider:before {
       transform: translateX(26px);
     }
+
+    /* Site compatibility message styles */
+    .compatibility-message {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #ffffff;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+      z-index: 1000;
+    }
+    
+    .compatibility-message img {
+      width: 80px;
+      margin-bottom: 20px;
+    }
+    
+    .compatibility-message h2 {
+      color: #1565C0;
+      margin-bottom: 15px;
+    }
+    
+    .compatibility-message p {
+      color: #0D47A1;
+      margin-bottom: 20px;
+      max-width: 300px;
+      line-height: 1.6;
+    }
+    
+    .visit-button {
+      display: inline-block;
+      background: linear-gradient(to bottom, #2196F3, #1976D2);
+      color: white;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 2px 5px rgba(33, 150, 243, 0.3);
+    }
+    
+    .visit-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(33, 150, 243, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -647,6 +698,14 @@
       <div class="drop"></div>
       <div class="wave"></div>
     </div>
+  </div>
+
+  <!-- Site compatibility message -->
+  <div class="compatibility-message" id="compatibility-message">
+    <img src="icons/icon128.png" alt="How Wet is AI? icon">
+    <h2>Extension Not Active</h2>
+    <p>This extension only works on ChatGPT websites. Please visit ChatGPT to start tracking water and energy usage.</p>
+    <a href="https://chat.openai.com" target="_blank" class="visit-button">Visit ChatGPT</a>
   </div>
 
   <h1>How Wet is AI?</h1>
